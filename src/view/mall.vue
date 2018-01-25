@@ -114,9 +114,7 @@ export default {
     };
   },
   mounted() {
-    this.getGoods();
-    this.fetchType();
-    this.grounding();
+    this.goLogin();
   },
   methods: {
     fetchHotGoods: async function(params, callS) {
@@ -155,22 +153,22 @@ export default {
       if (this.page >= this.totalPage) {
         this.loading = false;
         this.busy = true;
-        return
+        return;
       }
       this.page++;
-        this.fetchHotGoods(
-          {
-            groups: this.groups,
-            sort: this.sort,
-            page: this.page
-          },
-          (res) => {
-            this.hotGoods = this.hotGoods.concat(res.data.product)
-          }
-        );
+      this.fetchHotGoods(
+        {
+          groups: this.groups,
+          sort: this.sort,
+          page: this.page
+        },
+        res => {
+          this.hotGoods = this.hotGoods.concat(res.data.product);
+        }
+      );
     },
     //打开页面默认获取数据 仅仅获取数据，不判断
-    getGoods() {  
+    getGoods() {
       this.loading = true;
       this.fetchHotGoods(
         {
@@ -181,7 +179,7 @@ export default {
         res => {
           this.loading = false;
           console.log(res);
-          
+
           this.hotGoods = res.data.product;
           this.totalPage = res.data.pages;
           if (this.page == this.totalPage) {
@@ -216,6 +214,21 @@ export default {
         }
       } else {
         this.sortType = "def";
+      }
+    },
+    goLogin: async function() {
+      let params = {
+        phone: 15218378694
+      };
+      const res = await http.post(api.send_SMS_verifyCode, params);
+      await http.post(api.login_by_verifyCode, {
+        phone: 15218378694,
+        code: 1234
+      });
+      if (res.data) {
+        this.getGoods();
+        this.fetchType();
+        this.grounding();
       }
     }
   },

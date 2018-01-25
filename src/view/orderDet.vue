@@ -1,10 +1,9 @@
 <template>
   <div>
     <div class="orderDets">
-      <header class="orderPageHeader">
-        <img class="back" src="../assets/img/订单详情_slices/Arrow@3x.png" alt="">
-        <span class="orderDetTit">订单详情</span>
-      </header>
+      <nav-header>
+        <span class="orderDetTit" slot="header">拼团详情</span>
+      </nav-header>
       <div class="perInfo">
         <div class="shouhuo">
           <span class="shouhuoren">收货人：</span>
@@ -31,21 +30,21 @@
       </div>
 
       <div class="goodsItemInfo">
-        <goods-item></goods-item>
+        <goods-item :orderDetailsArr="orderDetailsArr" :checkedGuige="checkedGuige"></goods-item>
 
         <div class="infoPri">
           <div class="xiaojiBox">
             <span class="left">小计：</span>
             <span class="right">
               <span class="rightOne">￥</span>
-              <span class="rightTwo">123</span>
+              <span class="rightTwo">{{totalGoodsPri}}</span>
             </span>
           </div>
           <div class="yunfeiBox">
             <span class="yunfei">运费：</span>
             <span class="yunfeiNum">
               <span class="left">￥</span>
-              <span class="right">12</span>
+              <span class="right">{{freight}}</span>
             </span>
           </div>
         </div>
@@ -61,7 +60,7 @@
         <span class="left">
           <span class="heji">合计：</span>
           <span class="xiushi">￥</span>
-          <span class="totPri">123</span>
+          <span class="totPri">{{totalPrice}}</span>
         </span>
         <span class="right" @click="isShowEven">
           <button>立即支付</button>
@@ -69,67 +68,57 @@
       </div>
     </div>
 
-    <div class="payBox" v-show="isShow">
-      <div class="orderPageHeader">
-        <img class="close back" @click="isShowEven" src="../assets/img/立即支付_slices/关闭@3x.png" alt="">
-        <span class="orderDetTit">立即付款</span>
-      </div>
-
-      <div class="needPay">
-        <div class="top">需支付金额</div>
-        <div class="bot">¥302.45</div>
-      </div>
-
-      <div class="payType">
-        <div class="left">
-          <img class="logoPay" src="../assets/img/立即支付_slices/微信支付@3x.png" alt="">
-        </div>
-        <div class="cen">
-          <div class="payTit">微信支付</div>
-          <div class="tip">推荐使用</div>
-        </div>
-        <img v-if="isCheck" class="checkItem" src="../assets/img/立即支付_slices/勾选@3x.png" alt="">
-        <img v-else class="checkItem" src="../assets/img/立即支付_slices/Oval@3x.png" alt="">
-      </div>
-      <div class="payType">
-        <div class="left">
-          <img class="logoPay" src="../assets/img/立即支付_slices/微信支付@3x.png" alt="">
-        </div>
-        <div class="cen">
-          <div class="payTit">微信支付</div>
-          <div class="tip">推荐使用</div>
-        </div>
-        <img v-if="isCheck" class="checkItem" src="../assets/img/立即支付_slices/勾选@3x.png" alt="">
-        <img v-else class="checkItem" src="../assets/img/立即支付_slices/Oval@3x.png" alt="">
-      </div>
-
-      <div class="payBtn">确定付款</div>
-    </div>
+    
   </div>
 </template>
 
 <script>
 import Vue from "vue";
 import goodsItem from "../components/goodsItem.vue";
-import { Header } from "mint-ui";
 
-Vue.component(Header.name, Header);
+import NavHeader from "../components/navHeader.vue";
 export default {
   name: "name",
   data: function() {
     return {
       isShow: false,
-      isCheck: false
+      isCheck: false,
+      orderDetData: {},
+      myOrders: {},
+      orderDetailsArr: [],
+      checkedGuige: [],
+      totalGoodsPri: 0,
+      totalPrice: 0,
+      freight: 0
     };
   },
   methods: {
     isShowEven(buyTypeDet) {
       this.isShow = !this.isShow;
       this.buyType = buyTypeDet;
+    },
+    comTotleGoodsPri() {
+      this.totalPrice = this.myOrders.prices
+      this.freight = this.myOrders.orderDetails.freight      
+      this.totalGoodsPri = this.totalPrice - this.freight
     }
   },
   components: {
-    goodsItem
+    goodsItem,
+    NavHeader
+  },
+  mounted() {
+    //传过来的混合数据
+    this.orderDetData = JSON.parse(this.$route.query.orderDetData);
+    //传递过来的规格
+    this.checkedGuige = JSON.parse(this.$route.query.checkedGuige);
+    
+    // 订单商品信息集合
+    this.myOrders = this.orderDetData.myorders;
+    // 订单商品信息数组
+    this.orderDetailsArr = this.myOrders.orderDetails.orderDetails[0].shoppingCat;
+    //计算商品总价
+    this.comTotleGoodsPri()
   }
 };
 </script>
@@ -161,74 +150,7 @@ export default {
     text-align: center;
   }
 }
-.payBox {
-  background-color: #fff;
-  z-index: 5;
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  .needPay {
-    background-color: #fff;
-    padding: 0.32rem 0;
-    .top {
-      margin-bottom: 0.2rem;
-      color: #4f5054;
-      font-size: 0.28rem;
-    }
-    .bot {
-      font-size: 0.5rem;
-      font-family: Impact;
-      color: rgba(255, 154, 61, 1);
-    }
-  }
-  .payType {
-    text-align: left;
-    border-top: 0.01rem solid #f0f0f0;
-    height: 1.39rem;
-    padding: 0.3rem;
-    position: relative;
-    background-color: #fff;
-    .left {
-      float: left;
-      margin-right: 0.2rem;
-      .logoPay {
-        width: 0.8rem;
-        height: 0.8rem;
-      }
-    }
-    .cen {
-      float: left;
-      .payTit {
-        margin-bottom: 0.03rem;
-        font-size: 0.32rem;
-        color: rgba(79, 80, 84, 1);
-      }
-      .tip {
-        font-size: 0.24rem;
-        color: rgba(79, 80, 84, 1);
-      }
-    }
-    .checkItem {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      right: 0;
-      width: 0.36rem;
-      height: 0.36rem;
-      box-sizing: content-box;
-      padding: 0.5rem;
-    }
-  }
 
-  .payBtn {
-    margin: 0.3rem;
-    margin-top: 0;
-    height: 0.96rem;
-    line-height: 0.96rem;
-    color: #fff;
-    background-color: rgba(66, 189, 86, 1);
-  }
-}
 //公共样式
 .orderDets {
   text-align: left;

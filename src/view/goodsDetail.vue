@@ -137,18 +137,18 @@
           <img class="close" @click="isShowEven('close')" src="../assets/img/mall/guige/关闭@3x.png" alt="">
         </div>
 
-        <!-- <template v-for="(guigesObj, keys,indexss) in guigess">
+        <template v-for="(guigesObj,indexss) in guigess">
           <div class="two" :key="indexss">
-            <div class="guigeType">{{keys}}</div>
-            <template v-for="(guigeObj,guigeIndex) in guigesObj.items">
-              <button :key="guigeIndex" class="guigeTypeItem" :class="[guiges.curIndex == guigeIndex ? guigeTypeItemActive : '']" @click="checkGuige(guigeIndex,guigeObj,guigesObj.curIndex)">{{guigeObj.guigeItem}}</button>
+            <div class="guigeType">{{guigesObj.sizes}}</div>
+            <template v-for="(guigeObj,guigeIndex) in guigesObj.sizeslist">
+              <button :key="guigeIndex" class="guigeTypeItem" :class="[guigesObj.curIndex == guigeIndex ? 'guigeTypeItemActive' : '']" @click="checkGuige(indexss,guigeIndex,guigesObj,guigeObj)">{{guigeObj.sizes}}</button>
             </template>
           </div>
-        </template> -->
+        </template>
 
         <div class="needNum">
           <span>需要数量：</span>
-          <input type="text" placeholder="输入数量（1万起）">
+          <input v-model="num" type="text" placeholder="输入数量（1万起）">
           <img v-if="ver > 3" src="../assets/img/mall/guige/提示@3x.png" alt="">
         </div>
 
@@ -158,18 +158,26 @@
         </div>
 
         <div class="res" v-if="ver > 3">
-          <span class="resGuiges">
-            <template v-for="(item,index) in checkedGuige">
-              <span class="resGuigeItem" :key="index">{{item}}</span>
+          <div class="resGuiges">
+            <template v-if="checkedGuige.length > 0" v-for="(item,index) in checkedGuige">
+              <div :key="index" class="resGuigeItems">
+                <template v-for="(addedItem,addedIndex) in item">
+                  <span class="resGuigeItem" :key="addedIndex">
+                    {{addedItem.sizes || addedItem.num}}
+                    <span v-if="addedItem.num">份</span>
+                  </span>
+                </template>
+                <img @click="delSelGuige(index)" src="../assets/img/mall/guige/Group 23@3x.png" alt="">
+              </div>
             </template>
-            <img src="../assets/img/mall/guige/Group 23@3x.png" alt="">
-          </span>
-          <button>添加所选</button>
+
+          </div>
+          <button @click="addCheck">添加所选</button>
         </div>
 
         <div class="sure">
-          <!-- <button class="addCart" @click="addCart(goodsId)">加入购物车</button> -->
-          <button class="goOrder">确定下单</button>
+          <button class="addCart" @click="addCart(goodsId)">加入购物车</button>
+          <button class="goOrder" @click="sureGoOrder">确定下单</button>
         </div>
 
       </div>
@@ -184,9 +192,9 @@ import api from "../utils/api";
 import axios from "axios";
 import util from "../utils/util";
 import shopItem from "../components/shopItem.vue";
-
 import groundItem from "../components/groundItem.vue";
-
+import { Toast } from "mint-ui";
+import { MessageBox } from "mint-ui";
 export default {
   name: "name",
   data: function() {
@@ -198,14 +206,21 @@ export default {
       proDetails: {},
       groundInfo: [],
       clock: [],
+      guigess: {},
+      newGuigess: [],
       checkedGuige: [],
-      guigess: {}
+      totalLength: 0,
+      num: "",
+      proDetails: {},
+      paramsSureOrder: {},
+      buy_way: 1,
+      guigesNum: 0,
+      proDetails1: {}
     };
   },
 
   mounted() {
     this.goodsId = this.$route.query.goodsId;
-
     this.fetchGoodsDet();
     this.fetchGroundItem(); //拿到团购列表商品中的第一项
   },
@@ -214,22 +229,35 @@ export default {
     groundItem
   },
   methods: {
+    //单价购买或者发起拼团或者关闭
     isShowEven(buyTypeTit, buy_way) {
-      this.isShow = !this.isShow;
       if (buyTypeTit == "close") {
+        this.isShow = !this.isShow;
         return;
       }
       this.buyType = buyTypeTit;
+      this.buy_way = buy_way;
       this.fetchGuigeDet(buy_way);
     },
     fetchGuigeDet: async function(buy_way) {
       let params = {
         id: 3,
-        buy_way: 1
+        buy_way
       };
       const res = await http.get(api.pro, params);
       if (res.data) {
-        this.guigess = res.data;
+        if (buy_way == 2 && res.data.code == -1) {
+         return Toast('已经开团啦，不能发起拼团了')
+        }
+        this.isShow = !this.isShow;
+        this.guigess = res.data.proSize.proSizeLists;
+        this.proDetails1 = res.data.proDetails
+        this.totalLength = this.guigess.length;
+        this.guigess.forEach((v, i) => {
+          v.curIndex = 0;
+          v.curItem = v.sizeslist[0];
+          this.newGuigess[i] = v.curItem;
+        });
       }
     },
     back() {
@@ -237,11 +265,10 @@ export default {
     },
     fetchGoodsDet: async function() {
       await http.get(api.pageviews, { id: this.goodsId });
-
       let params = {
         id: this.goodsId
       };
-      const res = await http.get(api.details, params);
+      const res = await http.get(api.prodetails, params);
       if (res.data) {
         this.proDetails = res.data.proDetails;
       }
@@ -260,33 +287,125 @@ export default {
         this.clock = util.countdownMore(timeArr, this);
       }
     },
-    checkGuige(guigeIndex, guigeObj, curIndex) {
-      curIndex = guigeIndex;
-      this.checkedGuige = [];
-      this.checkedGuige.push();
-    },
-    addCart: async function() {
-      let params = [
-        {
-          pid: "3",
-          title: "LED灯箱",
-          colour1: "黄色",
-          offering_price: "4.5",
-          colour2: "白色",
-          sizes1: "9cm",
-          image: "null",
-          sizes2: "6cm",
-          powers1: "20w",
-          powers2: "60w",
-          buynum1: "1000",
-          buynum2: "2000",
-          buyway: "1",
-          cart_num: "2"
+    checkGuige(indexss, guigeIndex, guigesObj, guigeObj) {
+      // debugger
+      guigesObj.curIndex = guigeIndex;
+
+      this.guigess.forEach((v, i) => {
+        v.sizeslist.forEach((v1, i1) => {
+          if (i == indexss && i1 == guigeIndex) {
+            for (let index = 0; index < this.newGuigess.length; index++) {
+              const guigeSize = this.newGuigess[index].sizes;
+              if (guigeSize === guigeObj.sizes) {
+                return;
+              }
+            }
+            v.curItem = v1;
+          }
+        });
+      });
+      this.newGuigess = [];
+      this.guigess.forEach(element => {
+        if (element.curItem) {
+          this.newGuigess.push(element.curItem);
         }
-      ];
-      const res = await http.post(api.addPro, params);
+      });
+    },
+    addCart: async function() {},
+    addCheck() {
+      if (this.guigesNum >= 4) {
+          return Toast('想购买4组以上规格商品要分开挑选下单哦')
+      }
+      let numNum = Number(this.num);
+      if (this.newGuigess.length == 0) {
+        return Toast(`请先选择规格并且各类型规格必选`);
+      } else if (this.newGuigess.length < this.totalLength) {
+        return Toast(`所选规格类型不能少于${this.totalLength}种`);
+      } else if (!Number.isInteger(numNum) || numNum <= 0) {
+        return Toast(`请规范输入商品数量并且大于0`);
+      }
+      this.newGuigess.push({ num: this.num });
+      this.checkedGuige.push(this.newGuigess);
+      this.guigesNum++
+      this.guigess.forEach((v, i) => {
+        v.curIndex = -1;
+        v.curItem = "";
+      });
+      this.newGuigess = [];
+    },
+    delSelGuige(delIndex) {
+      MessageBox.confirm("确定删除吗?")
+        .then(action => {
+          this.checkedGuige.splice(delIndex, 1);
+        })
+        .catch(() => {});
+    },
+    sureGoOrder: async function() {
+      this.paramsSureOrder = {
+        pid: this.proDetails1.id,
+        title: this.proDetails1.titls,
+        // this.proDetails1.original_price,
+        offering_price: 4.5,
+        image: this.proDetails1.image,
+        buyway: this.buy_way,
+        cart_num: this.checkedGuige.length
+      };
+      this.checkedGuige.forEach((v, i) => {
+        v.forEach((v1, i1) => {
+          if (i == 0) {
+            if (i1 == 0) {
+              this.paramsSureOrder.colour1 = v1.sizes;
+            } else if (i1 == 1) {
+              this.paramsSureOrder.sizes1 = v1.sizes;
+            } else if (i1 == 2) {
+              this.paramsSureOrder.powers1 = v1.sizes;
+            } else if (i1 == 3) {
+              this.paramsSureOrder.buynum1 = v1.num;
+            }
+          } else if (i == 1) {
+            if (i1 == 0) {
+              this.paramsSureOrder.colour2 = v1.sizes;
+            } else if (i1 == 1) {
+              this.paramsSureOrder.sizes2 = v1.sizes;
+            } else if (i1 == 2) {
+              this.paramsSureOrder.powers2 = v1.sizes;
+            } else if (i1 == 3) {
+              this.paramsSureOrder.buynum2 = v1.num;
+            }
+          } else if (i == 2) {
+            if (i1 == 0) {
+              this.paramsSureOrder.colour3 = v1.sizes;
+            } else if (i1 == 1) {
+              this.paramsSureOrder.sizes3 = v1.sizes;
+            } else if (i1 == 2) {
+              this.paramsSureOrder.powers3 = v1.sizes;
+            } else if (i1 == 3) {
+              this.paramsSureOrder.buynum3 = v1.num;
+            }
+          } else if (i == 3) {
+            if (i1 == 0) {
+              this.paramsSureOrder.colour4 = v1.sizes;
+            } else if (i1 == 1) {
+              this.paramsSureOrder.sizes4 = v1.sizes;
+            } else if (i1 == 2) {
+              this.paramsSureOrder.powers4 = v1.sizes;
+            } else if (i1 == 3) {
+              this.paramsSureOrder.buynum4 = v1.num;
+            }
+          }
+        });
+      });
+      let params = [this.paramsSureOrder];
+      const res = await http.post1(api.order, params);
       if (res.data) {
-        this.product = res.data.product;
+        let that = this;
+        this.$router.push({
+          path: 'orderDet',
+          query: {
+            orderDetData: JSON.stringify(res.data),
+            checkedGuige: JSON.stringify(that.checkedGuige),
+          }
+        })
       }
     }
   }
@@ -766,24 +885,27 @@ export default {
     .res {
       padding: 0.3rem;
       .resGuiges {
-        width: 1.6rem;
-        height: 0.5rem;
-        position: relative;
         margin: 0.5rem 0.3rem 0.5rem 0;
-        background-color: #4f5054;
         color: #fff;
         font-size: 0.2rem;
         padding-left: 0.03rem;
-        .resGuigeItem {
-          margin-right: 0.03rem;
-        }
-        img {
-          width: 0.2rem;
-          height: 0.2rem;
-          position: absolute;
-          right: 0;
-          top: 0;
-          transform: translate(50%, -50%);
+        .resGuigeItems {
+          height: 0.6rem;
+          line-height: 0.6rem;
+          position: relative;
+          margin-bottom: 0.2rem;
+          background-color: #4f5054;
+          .resGuigeItem {
+            margin-right: 0.03rem;
+          }
+          img {
+            width: 0.5rem;
+            height: 0.5rem;
+            position: absolute;
+            right: 0;
+            top: 0;
+            transform: translate(50%, -50%);
+          }
         }
       }
       button {

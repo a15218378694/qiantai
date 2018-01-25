@@ -45,7 +45,8 @@ export default {
   post (url, data) {
     return axios({
       method: 'post',
-      baseURL: 'http://merchant.luyongjin.vip',
+      // 线上 http://merchant.luyongjin.vip:80 测试 http://192.168.8.123:8080 192.168.8.102:80      
+      baseURL: 'http://192.168.8.123:8080',
       url,
       credentials: 'include',
       
@@ -65,11 +66,35 @@ export default {
       }
     )
   },
+  post1 (url, data) {
+    return axios({
+      method: 'post',
+      // 线上 http://merchant.luyongjin.vip:80 测试 http://192.168.8.123:8080 192.168.8.102:80      
+      baseURL: 'http://192.168.8.123:8080',
+      url,
+      credentials: 'include',
+      
+      data,
+      timeout: 10000,  
+      // headers: {
+      //   'X-Requested-With': 'XMLHttpRequest',
+      //   'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+      // }
+    }).then(
+      (response) => {
+        return checkStatus(response)
+      }
+    ).then(
+      (res) => {
+        return checkCode(res)
+      }
+    )
+  },
   get (url, params) {
     return axios({
       method: 'get',
-      // http://merchant.luyongjin.vip:80  http://192.168.8.123:8080 192.168.8.102:80
-      baseURL: 'http://merchant.luyongjin.vip',
+      // 线上 http://merchant.luyongjin.vip:80 测试 http://192.168.8.123:8080 192.168.8.102:80
+      baseURL: 'http://192.168.8.123:8080',
       url,
       params, // get 请求时带的参数
       timeout: 10000,
