@@ -89,7 +89,8 @@ export default {
       checkedGuige: [],
       totalGoodsPri: 0,
       totalPrice: 0,
-      freight: 0
+      freight: 0,
+      totalNum: 0
     };
   },
   methods: {

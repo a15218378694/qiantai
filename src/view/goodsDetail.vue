@@ -176,7 +176,7 @@
         </div>
 
         <div class="sure">
-          <button class="addCart" @click="addCart(goodsId)">加入购物车</button>
+          <button class="addCart" @click="addCart()">加入购物车</button>
           <button class="goOrder" @click="sureGoOrder">确定下单</button>
         </div>
 
@@ -247,11 +247,11 @@ export default {
       const res = await http.get(api.pro, params);
       if (res.data) {
         if (buy_way == 2 && res.data.code == -1) {
-         return Toast('已经开团啦，不能发起拼团了')
+          return Toast("已经开团啦，不能发起拼团了");
         }
         this.isShow = !this.isShow;
         this.guigess = res.data.proSize.proSizeLists;
-        this.proDetails1 = res.data.proDetails
+        this.proDetails1 = res.data.proDetails;
         this.totalLength = this.guigess.length;
         this.guigess.forEach((v, i) => {
           v.curIndex = 0;
@@ -289,21 +289,31 @@ export default {
     },
     checkGuige(indexss, guigeIndex, guigesObj, guigeObj) {
       // debugger
+      let flag = false;
       guigesObj.curIndex = guigeIndex;
+      for (let index1 = 0; index1 < this.guigess.length; index1++) {
+        const element1 = this.guigess[index1];
+        if (element1.curItem == guigeObj.sizes) {
+          flag = true;
+        }
+      }
+      if (!flag) {
+        this.guigess[indexss].curItem = guigeObj
+      }
+      // this.guigess.forEach((v, i) => {
+      //   v.sizeslist.forEach((v1, i1) => {
+      //     if (i == indexss && i1 == guigeIndex) {
+      //       for (let index = 0; index < this.newGuigess.length; index++) {
+      //         const guigeSize = this.newGuigess[index].sizes;
+      //         if (guigeSize === guigeObj.sizes) {
+      //         }
+      //       }
+      //       v.curItem = v1;
+      //       return;
+      //     }
+      //   });
+      // });
 
-      this.guigess.forEach((v, i) => {
-        v.sizeslist.forEach((v1, i1) => {
-          if (i == indexss && i1 == guigeIndex) {
-            for (let index = 0; index < this.newGuigess.length; index++) {
-              const guigeSize = this.newGuigess[index].sizes;
-              if (guigeSize === guigeObj.sizes) {
-                return;
-              }
-            }
-            v.curItem = v1;
-          }
-        });
-      });
       this.newGuigess = [];
       this.guigess.forEach(element => {
         if (element.curItem) {
@@ -311,10 +321,32 @@ export default {
         }
       });
     },
-    addCart: async function() {},
+    addCart: async function() {
+      let params = [
+        {
+          pid: "3",
+          title: "LED灯箱",
+          colour1: "黄色",
+          offering_price: "4.5",
+          colour2: "白色",
+          sizes1: "9cm",
+          image: "null",
+          sizes2: "6cm",
+          powers1: "20w",
+          powers2: "60w",
+          buynum1: "1000",
+          buynum2: "2000",
+          buyway: "1",
+          cart_num: "2"
+        }
+      ];
+      const res = await http.post1(api.addPro, params);
+      if (res.data) {
+      }
+    },
     addCheck() {
       if (this.guigesNum >= 4) {
-          return Toast('想购买4组以上规格商品要分开挑选下单哦')
+        return Toast("想购买4组以上规格商品要分开挑选下单哦");
       }
       let numNum = Number(this.num);
       if (this.newGuigess.length == 0) {
@@ -326,7 +358,7 @@ export default {
       }
       this.newGuigess.push({ num: this.num });
       this.checkedGuige.push(this.newGuigess);
-      this.guigesNum++
+      this.guigesNum++;
       this.guigess.forEach((v, i) => {
         v.curIndex = -1;
         v.curItem = "";
@@ -400,12 +432,12 @@ export default {
       if (res.data) {
         let that = this;
         this.$router.push({
-          path: 'orderDet',
+          path: "orderDet",
           query: {
             orderDetData: JSON.stringify(res.data),
-            checkedGuige: JSON.stringify(that.checkedGuige),
+            checkedGuige: JSON.stringify(that.checkedGuige)
           }
-        })
+        });
       }
     }
   }

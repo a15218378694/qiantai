@@ -19,5 +19,6 @@ export default {
   login_by_password: "/login/login_by_password.ajax",//密码登录
   binding_phone: "/login/binding_phone.ajax",//绑定手机号码
   login_by_wechat: "/login/login_by_wechat.ajax",//微信登录
-  order: "/pro/order"//商品 确定下单
+  order: "/pro/order",//商品 确定下单
+  addPro: '/shoppingcat/addPro'
 };

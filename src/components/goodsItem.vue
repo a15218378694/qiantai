@@ -25,7 +25,7 @@
               <span>￥</span>
               <span>{{item.offering_price}}</span>
             </div>
-            <div class="num">X{{totalNum}}</div>
+            <div class="num">{{totalNum}}</div>
           </div>
         </div>
       </div>
@@ -52,11 +52,7 @@ export default {
   },
   mounted() {
     this.checkedGuige.forEach((v, i) => {
-      v.forEach((v1, i1) => {
-        if (i1 == v.length - 1) {
-          this.totalNum += parseInt(v1.num);
-        }
-      });
+      this.totalNum += parseInt(v[v.length - 1].num);
     });
   },
   methods: {}
