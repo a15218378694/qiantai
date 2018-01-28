@@ -43,7 +43,6 @@
             </tr>
           </table>
         </div>
-
       </div>
 
       <div class="detTit">
@@ -138,26 +137,32 @@
 <script>
 import NavHeader from "../components/navHeader.vue";
 import GroundStep from "../components/groundStep.vue";
-import util from '../utils/util'
+import util from "../utils/util";
 export default {
   name: "name",
-  
+
   data: function() {
     return {
       clock: [],
-      groundStatus: "",
+      groundStatus: 1,
       timer: ""
     };
   },
   mounted() {
     util.countdown(1000000);
     this.changeStatus();
+    this.getGroudDet();
   },
   methods: {
-
-
     changeStatus() {
       this.groundStatus = this.$route.query.groundStatus;
+    },
+    getGroudDet: async function() {
+      let params = {};
+      const res = await http.get(api.finishpay, params);
+      if (res.data) {
+        this.goodsTypes = res.data.productModel;
+      }
     }
   },
   components: {

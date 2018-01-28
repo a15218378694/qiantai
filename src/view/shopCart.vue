@@ -13,18 +13,26 @@
               <div class="left">
                 <img v-if="!item.isSelected" v-on:click.stop="selected(item)" class="sel" src="../assets/img/shopCart/购物车_slices/Oval@2x.png" alt="">
                 <img v-else v-on:click.stop="selected(item)" class="sel" src="../assets/img/shopCart/购物车_slices/勾选@2x.png" alt="">
-                <img src="../assets/img/订单详情_slices/3934756966_1131286789.400x400@3x.png" alt="">
+                <img :src="item.image" alt="">
               </div>
               <div class="right">
-                <div class="one">{{item.goodsName}}</div>
-                <div class="two">款式：黄色 20cm 20W</div>
+                <div class="one">{{item.title}}</div>
+                <div class="two">款式：
+                  <template v-for="(item1,index1) in shopCartGoods.productSizes" >
+                    <span :key="index1">
+                      <span v-for="(item1Item,item1Key) in item1" :key="item1Key">
+                        {{ item1Item }}
+                      </span>
+                    </span>
+                  </template>
+                </div>
                 <div class="three">
                   <div class="pri">
                     <span class="priType">原价：</span>
                     <span>￥</span>
-                    <span>{{item.oldPrice}}</span>
+                    <span>{{item.offering_price}}</span>
                   </div>
-                  <div class="num">x122</div>
+                  <div class="num">X{{item.buynum}}</div>
                 </div>
                 <div class="closeDel" :class="{'tranShow': item.isTranShow}">
                   <span class="del" @click.stop="delGood(item)">删除</span>
@@ -33,6 +41,11 @@
             </div>
           </v-touch>
         </template>
+      </div>
+
+      <div class="view-more-normal" v-infinite-scroll="loadMore" infinite-scroll-disabled="busy" infinite-scroll-distance="20">
+        <img style="width:20px;height:20px;" src="../assets/img/common/loading.gif" v-if="loading">
+        <div v-if="this.totalPage <= this.page && !loading">到底部了</div>
       </div>
 
       <div class="goPay">
@@ -54,7 +67,7 @@
 import Vue from "vue";
 import api from "../utils/api";
 import http from "../utils/http";
-
+import util from "../utils/util";
 import navHeader from "@/components/navHeader.vue";
 var VueTouch = require("vue-touch");
 Vue.use(VueTouch, { name: "v-touch" });
@@ -62,25 +75,16 @@ export default {
   data: function() {
     return {
       totalPrice: 0,
-      shopCartGoods: [
-        {
-          goodsName: 123,
-          isSelected: false,
-          oldPrice: 3,
-          isTranShow: false
-        },
-        {
-          goodsName: 123,
-          isSelected: false,
-          oldPrice: 6,
-          isTranShow: false
-        }
-      ]
+      shopCartGoods: [],
+      page: 1,
+      totalPage: 0,
+      busy: true,
+      loading: false
     };
   },
   mounted() {
     this.comTot();
-    this.fetchShopCart()
+    this.getShopGoods();
   },
   computed: {},
   methods: {
@@ -102,15 +106,56 @@ export default {
       this.totalPrice = 0;
       this.shopCartGoods.forEach((v, i) => {
         if (v.isSelected) {
-          this.totalPrice += v.oldPrice;
+          this.totalPrice += v.offering_price;
         }
       });
     },
-    fetchShopCart: async function() {
-      const res = await http.get(api.showPro);
+
+    //下面是处理接口数据的
+    //打开页面默认获取数据
+    getShopGoods() {
+      this.loading = true;
+      this.fetchShopCart(
+        {
+          page: this.page
+        },
+        res => {
+          this.loading = false;
+          this.shopCartGoods = res.data.list;
+          this.shopCartGoods.forEach((v,i) => {
+            v.isSelected = false
+          });
+          this.totalPage = res.data.page_total;
+          if (this.page == this.totalPage) {
+            this.busy = true;
+          } else {
+            this.busy = false;
+          }
+        }
+      );
+    },
+    fetchShopCart: async function(params, callS) {
+      const res = await http.get(api.showPro, params);
       if (res.data) {
-        // this.shopCartGoods = res.data
+        this.loading = false;
+        callS && callS(res);
       }
+    },
+    loadMore() {
+      this.loading = true;
+      util.loadMore(this, that => {
+        that.fetchShopCart(
+          {
+            page: that.page
+          },
+          res => {
+            res.data.list.forEach((v,i) => {
+                v.isSelected = false;
+            });
+            that.shopCartGoods = that.shopCartGoods.concat(res.data.list);
+          }
+        );
+      });
     }
   },
   components: {

@@ -1,5 +1,5 @@
 'use strict'
-
+var root = process.env.API_ROOT
 import axios from 'axios'
 import qs from 'qs'
 axios.defaults.withCredentials = true
@@ -46,7 +46,7 @@ export default {
     return axios({
       method: 'post',
       // 线上 http://merchant.luyongjin.vip:80 测试 http://192.168.8.123:8080 192.168.8.102:80      
-      baseURL: 'http://192.168.8.123:8080',
+      baseURL: root,
       url,
       credentials: 'include',
       
@@ -70,10 +70,9 @@ export default {
     return axios({
       method: 'post',
       // 线上 http://merchant.luyongjin.vip:80 测试 http://192.168.8.123:8080 192.168.8.102:80      
-      baseURL: 'http://192.168.8.123:8080',
+      baseURL: root,
       url,
       credentials: 'include',
-      
       data,
       timeout: 10000,  
       // headers: {
@@ -94,7 +93,7 @@ export default {
     return axios({
       method: 'get',
       // 线上 http://merchant.luyongjin.vip:80 测试 http://192.168.8.123:8080 192.168.8.102:80
-      baseURL: 'http://192.168.8.123:8080',
+      baseURL: root,
       url,
       params, // get 请求时带的参数
       timeout: 10000,

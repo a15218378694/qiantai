@@ -69,7 +69,6 @@
 import Vue from "vue";
 import http from "../utils/http";
 import api from "../utils/api";
-import axios from "axios";
 import util from "../utils/util";
 import groundItem from "../components/groundItem.vue";
 import shopItem from "../components/shopItem.vue";
@@ -114,12 +113,15 @@ export default {
     };
   },
   mounted() {
-    this.goLogin();
+    this.getGoods();
+    this.fetchType();
+    this.grounding();
   },
   methods: {
     fetchHotGoods: async function(params, callS) {
       const res = await http.get(api.recommend, params);
       if (res.data) {
+        this.loading = false;
         callS && callS(res);
       }
     },
@@ -150,24 +152,20 @@ export default {
       });
     },
     loadMore() {
-      if (this.page >= this.totalPage) {
-        this.loading = false;
-        this.busy = true;
-        return;
-      }
-      this.page++;
-      this.fetchHotGoods(
-        {
-          groups: this.groups,
-          sort: this.sort,
-          page: this.page
-        },
-        res => {
-          this.hotGoods = this.hotGoods.concat(res.data.product);
-        }
-      );
+      util.loadMore(this, that => {
+        that.fetchHotGoods(
+          {
+            groups: that.groups,
+            sort: that.sort,
+            page: that.page
+          },
+          res => {
+            that.hotGoods = that.hotGoods.concat(res.data.product);
+          }
+        );
+      });
     },
-    //打开页面默认获取数据 仅仅获取数据，不判断
+    //打开页面默认获取数据
     getGoods() {
       this.loading = true;
       this.fetchHotGoods(
@@ -214,21 +212,6 @@ export default {
         }
       } else {
         this.sortType = "def";
-      }
-    },
-    goLogin: async function() {
-      let params = {
-        phone: 15218378694
-      };
-      const res = await http.post(api.send_SMS_verifyCode, params);
-      await http.post(api.login_by_verifyCode, {
-        phone: 15218378694,
-        code: 1234
-      });
-      if (res.data) {
-        this.getGoods();
-        this.fetchType();
-        this.grounding();
       }
     }
   },

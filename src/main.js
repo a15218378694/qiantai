@@ -16,6 +16,7 @@ import api from "./utils/api";
 import router from "./router";
 import axios from "axios";
 import "mint-ui/lib/style.css";
+import bridge from './constant/nativeJSBridge';
 
 Vue.use(infiniteScroll);
 Vue.use(Vuex);

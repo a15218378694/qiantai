@@ -20,5 +20,6 @@ export default {
   binding_phone: "/login/binding_phone.ajax",//绑定手机号码
   login_by_wechat: "/login/login_by_wechat.ajax",//微信登录
   order: "/pro/order",//商品 确定下单
-  addPro: '/shoppingcat/addPro'
+  addPro: '/shoppingcat/addPro',//加入购物车
+  finishpay: '/groupbooking/finishpay'//去参团，或者支付完成跳转到的拼团详情页面
 };

@@ -158,7 +158,7 @@
         </div>
 
         <div class="res" v-if="ver > 3">
-          <div class="resGuiges">
+          <div class="resGuiges" v-if="showChecked">
             <template v-if="checkedGuige.length > 0" v-for="(item,index) in checkedGuige">
               <div :key="index" class="resGuigeItems">
                 <template v-for="(addedItem,addedIndex) in item">
@@ -172,11 +172,11 @@
             </template>
 
           </div>
-          <button @click="addCheck">添加所选</button>
+          <button @click="addCheckGuigeItem">添加所选</button>
         </div>
 
         <div class="sure">
-          <button class="addCart" @click="addCart()">加入购物车</button>
+          <button v-if="buy_way == 1" class="addCart" @click="addCart()">加入购物车</button>
           <button class="goOrder" @click="sureGoOrder">确定下单</button>
         </div>
 
@@ -211,11 +211,14 @@ export default {
       checkedGuige: [],
       totalLength: 0,
       num: "",
+      numNum: 0,
       proDetails: {},
       paramsSureOrder: {},
       buy_way: 1,
       guigesNum: 0,
-      proDetails1: {}
+      proDetails1: {},
+      showChecked: false,
+      isClickAdd: false
     };
   },
 
@@ -239,6 +242,15 @@ export default {
       this.buy_way = buy_way;
       this.fetchGuigeDet(buy_way);
     },
+    // pinGroud(buy_way) {
+    //   this.$router.push({
+    //     path: 'groundDet',
+    //     query: {
+    //       buy_way,
+    //       groundStatus: 1
+    //     }
+    //   })
+    // },
     fetchGuigeDet: async function(buy_way) {
       let params = {
         id: 3,
@@ -298,7 +310,7 @@ export default {
         }
       }
       if (!flag) {
-        this.guigess[indexss].curItem = guigeObj
+        this.guigess[indexss].curItem = guigeObj;
       }
       // this.guigess.forEach((v, i) => {
       //   v.sizeslist.forEach((v1, i1) => {
@@ -321,58 +333,116 @@ export default {
         }
       });
     },
-    addCart: async function() {
-      let params = [
-        {
-          pid: "3",
-          title: "LED灯箱",
-          colour1: "黄色",
-          offering_price: "4.5",
-          colour2: "白色",
-          sizes1: "9cm",
-          image: "null",
-          sizes2: "6cm",
-          powers1: "20w",
-          powers2: "60w",
-          buynum1: "1000",
-          buynum2: "2000",
-          buyway: "1",
-          cart_num: "2"
-        }
-      ];
+    addCart() {
+      if (!this.addCartCheck()) {
+        return;
+      }
+      if (!this.isClickAdd && !this.addCheck()) {
+        return;
+      }
+      this.zuheChecked();
+      this.addCartEven();
+    },
+    //调起加入购物车接口
+    addCartEven: async function() {
+      this.showChecked = false;
+      let params = this.getParams();
       const res = await http.post1(api.addPro, params);
       if (res.data) {
+        this.guigesNum = 0;
+        this.clearStatus();
+        this.clearAllSelGuige();
+        Toast(res.data.msg);
+        return;
       }
     },
+    //点击添加所选
+    addCheckGuigeItem() {
+      if (this.addCheck() == false) {
+        console.log(21331);
+
+        return;
+      }
+      this.zuheChecked();
+      this.clearStatus();
+      this.showChecked = true;
+      this.isClickAdd = true;
+    },
+    //点击添加所选项或者加入购物车共有的检测
     addCheck() {
+      this.numNum = Number(this.num);
+      let flag = true;
       if (this.guigesNum >= 4) {
-        return Toast("想购买4组以上规格商品要分开挑选下单哦");
-      }
-      let numNum = Number(this.num);
-      if (this.newGuigess.length == 0) {
-        return Toast(`请先选择规格并且各类型规格必选`);
+        flag = false;
+        Toast("购买4组以上规格商品请加入购物车购买");
+      } else if (this.newGuigess.length == 0) {
+        flag = false;
+        Toast(`请先选择规格并且各类型规格必选`);
       } else if (this.newGuigess.length < this.totalLength) {
-        return Toast(`所选规格类型不能少于${this.totalLength}种`);
-      } else if (!Number.isInteger(numNum) || numNum <= 0) {
-        return Toast(`请规范输入商品数量并且大于0`);
+        flag = false;
+        Toast(`所选规格类型不能少于${this.totalLength}种`);
+      } else if (!Number.isInteger(this.numNum) || this.numNum <= 0) {
+        flag = false;
+        Toast(`请规范输入商品数量并且大于0`);
       }
-      this.newGuigess.push({ num: this.num });
+      return flag;
+    },
+    //只用于点击加入购物车的检测
+    addCartCheck() {
+      let flag = true;
+      if (!this.num > 0 && this.checkedGuige.length == 0) {
+        flag = false;
+        Toast("请先选择规格项并规范填写了数量");
+      }
+      return flag;
+    },
+    //组合所选中的数据
+    zuheChecked() {
+      this.newGuigess.push({ num: this.numNum });
       this.checkedGuige.push(this.newGuigess);
       this.guigesNum++;
+    },
+    //清空规格状态以及清空一套规格
+    clearStatus() {
       this.guigess.forEach((v, i) => {
         v.curIndex = -1;
         v.curItem = "";
       });
       this.newGuigess = [];
     },
+    //清空所有选中规格
+    clearAllSelGuige() {
+      this.checkedGuige = [];
+    },
     delSelGuige(delIndex) {
       MessageBox.confirm("确定删除吗?")
         .then(action => {
           this.checkedGuige.splice(delIndex, 1);
+          this.guigesNum--;
         })
         .catch(() => {});
     },
     sureGoOrder: async function() {
+      if (this.addCheck() == false) {
+        return;
+      } else {
+        this.zuheChecked();
+      }
+      let params = this.getParams();
+      const res = await http.post1(api.order, params);
+      if (res.data) {
+        let that = this;
+        this.$router.push({
+          path: "orderDet",
+          query: {
+            orderDetData: JSON.stringify(res.data),
+            checkedGuige: JSON.stringify(that.checkedGuige)
+          }
+        });
+      }
+    },
+    //拿到发给后端的参数
+    getParams() {
       this.paramsSureOrder = {
         pid: this.proDetails1.id,
         title: this.proDetails1.titls,
@@ -427,18 +497,7 @@ export default {
           }
         });
       });
-      let params = [this.paramsSureOrder];
-      const res = await http.post1(api.order, params);
-      if (res.data) {
-        let that = this;
-        this.$router.push({
-          path: "orderDet",
-          query: {
-            orderDetData: JSON.stringify(res.data),
-            checkedGuige: JSON.stringify(that.checkedGuige)
-          }
-        });
-      }
+      return [this.paramsSureOrder];
     }
   }
 };

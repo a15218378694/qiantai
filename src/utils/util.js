@@ -106,5 +106,16 @@ export default {
       }
       this.countdowns(that, temp_array);
     }, intervalTime);
-  }
+  },
+
+  //分页 上拉加载更多
+  loadMore(that,callb) {
+    if (that.page >= that.totalPage) {
+      that.loading = false;
+      that.busy = true;
+      return;
+    }
+    that.page++;
+    callb(that);
+  },
 };
